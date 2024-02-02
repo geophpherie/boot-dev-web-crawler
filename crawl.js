@@ -17,13 +17,13 @@ function normalizeURL(url) {
 }
 
 function getURLsfromHTML(htmlBody, baseURL) {
-    const dom = new JSDOM(htmlBody)
+    const dom = new jsom.JSDOM(htmlBody)
 
     const elements = dom.window.document.querySelectorAll('a')
 
     const urls = []
 
-    for (let element of elements) {
+    for (const element of elements) {
         if (element.href.startsWith('/')) {
             urls.push(`${baseURL}${element.href}`)
         }
@@ -34,7 +34,33 @@ function getURLsfromHTML(htmlBody, baseURL) {
     return urls
 }
 
+async function crawlPage(url) {
+    // fetch the webpage of the current url
+    try {
+        const response = await fetch(url)
+        if (!response.ok) {
+            console.log(`response error :: ${response.status}`)
+            return
+        }
+
+        if (!response.headers.get('content-type').includes('text/html')) {
+            console.log('invalid content-type')
+            return
+        }
+
+        console.log(await response.text())
+    } catch (e) {
+        console.log(`an error has ocurred :: ${e.message}`)
+        return
+    }
+
+
+
+    // else print html body and peace out 
+}
+
 module.exports = {
     normalizeURL,
-    getURLsfromHTML
+    getURLsfromHTML,
+    crawlPage
 }

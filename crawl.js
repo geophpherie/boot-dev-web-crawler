@@ -34,29 +34,54 @@ function getURLsfromHTML(htmlBody, baseURL) {
     return urls
 }
 
-async function crawlPage(url) {
+async function crawlPage(baseUrl, currentUrl, pages) {
+    const parsedBaseUrl = new URL(baseUrl)
+
+    const parsedCurrentUrl = new URL(currentUrl)
+
+    if (parsedBaseUrl.hostname !== parsedCurrentUrl.hostname) {
+        console.log(`${parsedBaseUrl} doesn't match ${parsedCurrentUrl}, returning.`)
+        return pages
+
+    }
+    const normalizedUrl = normalizeURL(currentUrl)
+
+    if (normalizedUrl in pages) {
+        pages[normalizedUrl] += 1
+        return pages
+    } else {
+        if (baseUrl !== currentUrl) {
+            pages[normalizedUrl] = 1
+        } else {
+            pages[normalizedUrl] = 0
+        }
+    }
     // fetch the webpage of the current url
+    console.log(`Now fetching ${currentUrl}`)
     try {
-        const response = await fetch(url)
+        const response = await fetch(currentUrl)
         if (!response.ok) {
             console.log(`response error :: ${response.status}`)
-            return
+            return pages
         }
 
         if (!response.headers.get('content-type').includes('text/html')) {
             console.log('invalid content-type')
-            return
+            return pages
         }
 
-        console.log(await response.text())
+        const newUrls = getURLsfromHTML(await response.text(), baseUrl)
+
+        for (const newUrl of newUrls) {
+            pages = await crawlPage(baseUrl, newUrl, pages)
+
+        }
     } catch (e) {
         console.log(`an error has ocurred :: ${e.message}`)
-        return
+        return pages
     }
 
-
-
-    // else print html body and peace out 
+    return pages
 }
 
 module.exports = {
